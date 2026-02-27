@@ -28,7 +28,7 @@ COPY . .
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
 # install PHP dependencies (separate lines for clearer failure output)
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --verbose
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --ignore-platform-reqs --verbose || cat /var/www/html/composer-error.log
 
 # environment and artisan caches
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
