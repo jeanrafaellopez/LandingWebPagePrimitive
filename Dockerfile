@@ -1,27 +1,45 @@
-FROM php:8.3-cli
+# Use an FPM base image so we can pair it with a web server (nginx/Render builder)
+FROM php:8.3-fpm
 
-# Instalar dependencias del sistema
+# system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libzip-dev \
     zip \
-    curl
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    nodejs \
+    npm \
+ && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Instalar Composer
+# install composer globally
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Establecer directorio de trabajo
-WORKDIR /var/www
+# set working directory
+WORKDIR /var/www/html
 
-# Copiar proyecto
+# copy existing application files
 COPY . .
 
-# Instalar dependencias Laravel
-RUN composer install --no-dev --optimize-autoloader
+# install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction \
+ && php artisan key:generate \
+ && php artisan config:cache \
+ && php artisan route:cache \
+ && php artisan view:cache
 
-# Exponer puerto
+# build frontend assets
+RUN npm ci \
+ && npm run build
+
+# set permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# expose the default http port for Render
 EXPOSE 10000
 
-# Iniciar servidor Laravel
-CMD php -S 0.0.0.0:10000 -t public
+# start php-fpm (Render will proxy requests to this port)
+CMD ["php-fpm"]
