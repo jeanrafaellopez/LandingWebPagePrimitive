@@ -27,12 +27,15 @@ COPY . .
 # ensure environment file is present
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
-# install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction \
- && php artisan key:generate --force \
- && php artisan config:cache \
- && php artisan route:cache \
- && php artisan view:cache
+# install PHP dependencies (separate lines for clearer failure output)
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --verbose
+
+# environment and artisan caches
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+RUN php artisan key:generate --force --quiet
+RUN php artisan config:cache --verbose
+RUN php artisan route:cache --verbose
+RUN php artisan view:cache --verbose
 
 # build frontend assets
 RUN npm ci \
