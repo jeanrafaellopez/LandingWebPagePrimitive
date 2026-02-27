@@ -11,9 +11,15 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libicu-dev \
+    libcurl4-openssl-dev \
+    libgmp-dev \
+    libmagickwand-dev \
     nodejs \
     npm \
- && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+ && pecl install imagick \
+ && docker-php-ext-enable imagick \
+ && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl curl gmp
 
 # install composer globally
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
